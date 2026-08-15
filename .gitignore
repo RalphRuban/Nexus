@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+
+# Virtual environment
+backend/venv/
+venv/
+.venv
+
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+
+# Google credentials
+credentials/*.json
+
+
+
+# Node
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+
+# Logs
+*.log
+
+
+# OS
+.DS_Store
+Thumbs.db
+
+
+# IDE
+.vscode/
+.idea/

@@ -3,49 +3,124 @@ import os
 from typing import Any, Dict, List, Optional
 
 from app.config import USE_FIRESTORE
-from app.data.mock_data import (
-    ACTIVITY,
-    HOSPITALS,
-    INCIDENTS,
-    INCIDENT_REPORTS,
-    ROADS,
-    SCENARIOS,
-    SHELTERS,
-    SUPPLIES,
-    TEAMS,
-    VEHICLES,
-    WARDS,
-    WEATHER_EVENTS,
-    ZONES,
+
+# ---------------------------------------------------------------------------
+# Lazy mock data
+#
+# The seed data (``app.data.mock_data -> app.data.real_data``) is a large
+# module whose import materializes ~3,660 weather records and 198 wards as
+# live Python objects (~200-400 MB RSS). It is only needed when running in
+# mock (non-Firestore) mode, so we defer the import until first access.
+# This keeps the process footprint small at startup on memory-limited hosts.
+# ---------------------------------------------------------------------------
+
+_mock_data_cache = None
+
+
+def _load_mock_data() -> dict:
+    """Import the mock data module once and cache the raw collections."""
+    global _mock_data_cache
+
+    if _mock_data_cache is None:
+        from app.data.mock_data import (  # heavy import - deferred
+            ACTIVITY,
+            HOSPITALS,
+            INCIDENTS,
+            INCIDENT_REPORTS,
+            ROADS,
+            SCENARIOS,
+            SHELTERS,
+            SUPPLIES,
+            TEAMS,
+            VEHICLES,
+            WARDS,
+            WEATHER_EVENTS,
+            ZONES,
+        )
+
+        _mock_data_cache = {
+            "incidents": INCIDENTS,
+            "zones": ZONES,
+            "roads": ROADS,
+            "shelters": SHELTERS,
+            "hospitals": HOSPITALS,
+            "teams": TEAMS,
+            "vehicles": VEHICLES,
+            "supplies": SUPPLIES,
+            "weather_events": WEATHER_EVENTS,
+            "incident_reports": INCIDENT_REPORTS,
+            "wards": WARDS,
+            "activity": ACTIVITY,
+            "scenarios": SCENARIOS,
+        }
+
+    return _mock_data_cache
+
+
+_COLLECTION_KEYS = (
+    "incidents",
+    "zones",
+    "roads",
+    "shelters",
+    "hospitals",
+    "teams",
+    "vehicles",
+    "supplies",
+    "weather_events",
+    "incident_reports",
+    "wards",
+    "activity",
+    "scenarios",
 )
 
-# ---------------------------------------------------------------------------
-# Mock store
-# ---------------------------------------------------------------------------
 
-MOCK_COLLECTIONS: Dict[str, List[Dict[str, Any]]] = {
-    "incidents": INCIDENTS,
-    "zones": ZONES,
-    "roads": ROADS,
-    "shelters": SHELTERS,
-    "hospitals": HOSPITALS,
-    "teams": TEAMS,
-    "vehicles": VEHICLES,
-    "supplies": SUPPLIES,
-    "weather_events": WEATHER_EVENTS,
-    "incident_reports": INCIDENT_REPORTS,
-    "wards": WARDS,
-    "activity": ACTIVITY,
-    "scenarios": SCENARIOS,
-    "plans": [],
-    "agent_state": [],
-    "traces": [],
-}
+class _LazyCollections:
+    """Lazy dict-like view over the seed collections.
 
-_MOCK_STORE: Dict[str, Dict[str, Dict[str, Any]]] = {
-    name: {item["id"]: dict(item) for item in items}
-    for name, items in MOCK_COLLECTIONS.items()
-}
+    Iteration / item access triggers the (heavy) mock data import on first
+    use, so code that only wants to enumerate collection names never pays
+    the cost of loading the weather/ward objects.
+    """
+
+    def items(self):
+        return _load_mock_data().items()
+
+    def keys(self):
+        return _load_mock_data().keys()
+
+    def values(self):
+        return _load_mock_data().values()
+
+    def get(self, key, default=None):
+        return _load_mock_data().get(key, default)
+
+    def __iter__(self):
+        return iter(_COLLECTION_KEYS)
+
+    def __len__(self):
+        return len(_COLLECTION_KEYS)
+
+
+MOCK_COLLECTIONS: Dict[str, List[Dict[str, Any]]] = _LazyCollections()
+
+_mock_store_cache = None
+
+
+def _mock_store() -> Dict[str, Dict[str, Dict[str, Any]]]:
+    """Return the in-memory mock store, building it lazily on first use."""
+    global _mock_store_cache
+
+    if _mock_store_cache is None:
+        _mock_store_cache = {
+            name: {item["id"]: dict(item) for item in items}
+            for name, items in _load_mock_data().items()
+        }
+        _mock_store_cache.setdefault("plans", {})
+        _mock_store_cache.setdefault("agent_state", {})
+        _mock_store_cache.setdefault("traces", {})
+
+    return _mock_store_cache
+
 
 # When set, CRUD operations route to this isolated store instead of the
 # global store. Used by the scenario engine to run "what if?" mutations
@@ -63,7 +138,7 @@ def _active_store() -> Dict[str, Dict[str, Dict[str, Any]]]:
     if override is not None:
         return override
 
-    return _MOCK_STORE
+    return _mock_store()
 
 
 # ---------------------------------------------------------------------------
@@ -162,7 +237,7 @@ def list_documents(
     active_store = _store_override.get()
 
     if active_store is not None or not USE_FIRESTORE:
-        store = active_store if active_store is not None else _MOCK_STORE
+        store = active_store if active_store is not None else _mock_store()
 
         collection_store = store.get(
             collection_name,
@@ -204,7 +279,7 @@ def get_document(
     active_store = _store_override.get()
 
     if active_store is not None or not USE_FIRESTORE:
-        store = active_store if active_store is not None else _MOCK_STORE
+        store = active_store if active_store is not None else _mock_store()
 
         collection_store = store.get(
             collection_name,
@@ -246,7 +321,7 @@ def create_document(
     active_store = _store_override.get()
 
     if active_store is not None or not USE_FIRESTORE:
-        store = active_store if active_store is not None else _MOCK_STORE
+        store = active_store if active_store is not None else _mock_store()
 
         collection_store = store.setdefault(
             collection_name,
@@ -284,7 +359,7 @@ def update_document(
     active_store = _store_override.get()
 
     if active_store is not None or not USE_FIRESTORE:
-        store = active_store if active_store is not None else _MOCK_STORE
+        store = active_store if active_store is not None else _mock_store()
 
         collection_store = store.setdefault(
             collection_name,
@@ -330,7 +405,7 @@ def delete_document(
     active_store = _store_override.get()
 
     if active_store is not None or not USE_FIRESTORE:
-        store = active_store if active_store is not None else _MOCK_STORE
+        store = active_store if active_store is not None else _mock_store()
 
         collection_store = store.get(
             collection_name,
@@ -368,7 +443,7 @@ def set_mock_documents(
     collection: str,
     documents: List[Dict[str, Any]],
 ) -> None:
-    collection_store = _MOCK_STORE.setdefault(
+    collection_store = _mock_store().setdefault(
         collection,
         {},
     )
@@ -389,7 +464,7 @@ def set_mock_documents(
 
 
 def clear_mock_store() -> None:
-    for collection_store in _MOCK_STORE.values():
+    for collection_store in _mock_store().values():
         collection_store.clear()
 
 
@@ -404,7 +479,7 @@ def reset_store() -> int:
     count = 0
 
     for collection_name, documents in MOCK_COLLECTIONS.items():
-        collection_store = _MOCK_STORE.setdefault(
+        collection_store = _mock_store().setdefault(
             collection_name,
             {},
         )

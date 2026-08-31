@@ -1,10 +1,5 @@
 from datetime import datetime, timezone
 
-from google.adk.runners import Runner
-from google.adk.sessions import InMemorySessionService
-from google.genai import types
-
-from app.agents.agents import build_simulation_workflow, build_workflow
 from app.agents.gateway import AgentTraceBuilder
 from app.agents.schemas import (
     AgentAnalysis,
@@ -25,37 +20,58 @@ from app.services.firestore import create_document, list_documents
 
 _APP_NAME = "nexus_agents"
 
-_session_service = InMemorySessionService()
+# The Google Agent Development Kit (google.adk) is imported lazily because it
+# pulls a heavy dependency graph into memory (~150-300 MB). In deterministic
+# mode the pipeline runs without ADK, so we keep it out of the import path to
+# stay within the memory budget of memory-limited hosting (e.g. Render free).
+_session_service = None
+_runner = None
+_simulation_runner = None
 
-_runner: Runner | None = None
-_simulation_runner: Runner | None = None
+
+def _get_session_service():
+    """Lazily create the ADK in-memory session service."""
+    global _session_service
+
+    if _session_service is None:
+        from google.adk.sessions import InMemorySessionService
+
+        _session_service = InMemorySessionService()
+
+    return _session_service
 
 
-def _get_runner() -> Runner:
+def _get_runner():
     global _runner
 
     if _runner is None:
+        from google.adk.runners import Runner
+        from app.agents.agents import build_workflow
+
         workflow, _ = build_workflow()
 
         _runner = Runner(
             agent=workflow,
             app_name=_APP_NAME,
-            session_service=_session_service,
+            session_service=_get_session_service(),
         )
 
     return _runner
 
 
-def _get_simulation_runner() -> Runner:
+def _get_simulation_runner():
     global _simulation_runner
 
     if _simulation_runner is None:
+        from google.adk.runners import Runner
+        from app.agents.agents import build_simulation_workflow
+
         workflow, _ = build_simulation_workflow()
 
         _simulation_runner = Runner(
             agent=workflow,
             app_name=_APP_NAME,
-            session_service=_session_service,
+            session_service=_get_session_service(),
         )
 
     return _simulation_runner
@@ -92,9 +108,14 @@ def _log(message: str, actor: str = "AGENT", severity: str = "INFO") -> None:
 
 
 async def _run_workflow(incident_id: str, user_id: str) -> list[str]:
+    if AGENT_LLM_MODE != "llm":
+        return []
+
+    from google.genai import types
+
     runner = _get_runner()
 
-    session = await _session_service.create_session(
+    session = await _get_session_service().create_session(
         app_name=_APP_NAME,
         user_id=user_id,
     )
@@ -136,9 +157,14 @@ async def run_simulation_workflow(
     user_id: str = "simulation-1",
 ) -> list[str]:
     """Execute the Simulation agent through its dedicated ADK workflow."""
+    if AGENT_LLM_MODE != "llm":
+        return []
+
+    from google.genai import types
+
     runner = _get_simulation_runner()
 
-    session = await _session_service.create_session(
+    session = await _get_session_service().create_session(
         app_name=_APP_NAME,
         user_id=user_id,
     )

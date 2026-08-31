@@ -1,5 +1,3 @@
-from google.adk import Agent, Workflow
-
 from app.agents.llm import build_llm
 from app.agents.tools import (
     analyze_risk,
@@ -17,6 +15,8 @@ def _model():
 
 
 def build_agents():
+    from google.adk import Agent  # heavy import - deferred
+
     research_agent = Agent(
         name="research",
         model=_model(),
@@ -99,6 +99,8 @@ def build_agents():
 
 
 def build_workflow():
+    from google.adk import Workflow  # heavy import - deferred
+
     agents = build_agents()
 
     workflow = Workflow(
@@ -119,6 +121,8 @@ def build_workflow():
 
 def build_simulation_workflow():
     """Dedicated on-demand workflow for the Simulation agent."""
+    from google.adk import Workflow  # heavy import - deferred
+
     agents = build_agents()
 
     workflow = Workflow(

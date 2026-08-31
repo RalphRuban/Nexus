@@ -91,9 +91,7 @@ flowchart LR
 │   │   ├── services/   Firestore / mock data layer
 │   │   └── vision/     Gemini image extraction
 │   ├── tests/          pytest suite
-│   ├── Dockerfile      Cloud Run container
-│   ├── service.yaml    Cloud Run service spec
-│   ├── Procfile        Generic web start command
+│   ├── Procfile        Render start command (uvicorn)
 │   └── seed_firestore.py
 └── frontend/           Next.js 16 command center
     ├── app/            Routes + layout
@@ -223,62 +221,42 @@ regenerated with `python scripts/fetch_real_data.py` (network required).
 
 ## Deployment
 
-This app is designed to run live for others to view.
+This app runs live, front-to-back, without an account with a billing card:
+the FastAPI backend on **Render** (free web service, native Python runtime)
+and the Next.js frontend on **Vercel** (free Hobby plan). Firestore is used
+as the real persistent store.
 
-### Backend on Cloud Run
+Live URLs:
+- Backend: `https://nexus-backend-o959.onrender.com`
+- Frontend: `https://nexus-nu-pied.vercel.app`
 
-1. Push the repo to GitHub.
-2. From the `backend/` directory, build and push the container:
+### Backend on Render (native Python, no Docker)
 
-   ```bash
-   cd backend
-   gcloud builds submit --tag gcr.io/PROJECT_ID/nexus-backend
-   ```
-
-3. Create the secrets and service:
-
-   ```bash
-   # Gemini key (used by vision + optional LLM agent mode)
-   gcloud secrets create nexus-secrets
-   printf "%s" "YOUR_GEMINI_KEY" | gcloud secrets versions add nexus-secrets --data-file=-
-
-   # Firebase admin service-account JSON (for real Firestore persistence)
-   gcloud secrets create nexus-firestore-cred \
-     --data-file=credentials/nexus-....json
-   ```
-
-   Set `PROJECT_ID` in `service.yaml`, then:
-
-   ```bash
-   gcloud run services replace service.yaml
-   ```
-
-   `service.yaml` is configured for **real Firestore**: it mounts the
-   admin credential at `/secrets/firebase-adminsdk.json`
-   (`GOOGLE_APPLICATION_CREDENTIALS`), sets `USE_FIRESTORE=true`, and
-   grants 1 GiB of memory. You can override the CORS origin by changing
-   `FRONTEND_URL` before replacing the service.
-
-   Alternatively, deploy **in mock mode** (in-memory data, no Firestore,
-   resets on restart) directly with:
-
-   ```bash
-   gcloud run deploy nexus-backend \
-     --image gcr.io/PROJECT_ID/nexus-backend \
-     --platform managed --region us-central1 --allow-unauthenticated \
-     --set-env-vars USE_FIRESTORE=false,VISION_MODE=llm,AGENT_LLM_MODE=deterministic \
-     --set-env-vars FRONTEND_URL=https://nexus-frontend.vercel.app \
-     --set-secrets GOOGLE_API_KEY=nexus-secrets:latest
-   ```
-
-4. Note the HTTPS URL returned (e.g. `https://nexus-backend-xxxx-uc.a.run.app`).
+1. Push the repo to GitHub (default branch `main`).
+2. In Render, **New + → Web Service**, connect the repo.
+3. Root directory: `backend`
+4. Runtime: **Python 3** (Render detects `requirements.txt` + `Procfile`;
+   there is **no Dockerfile** — that keeps deploys fast and free).
+5. Build command: `pip install -r requirements.txt`
+6. Start command (from `Procfile`): `uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}`
+7. Environment:
+   - `USE_FIRESTORE=true`
+   - `GOOGLE_APPLICATION_CREDENTIALS_JSON` = full Firebase admin service-account
+     JSON (the app falls back to in-memory mock data if unset)
+   - `AGENT_LLM_MODE=deterministic` (or `llm` to use the Gemini agent)
+   - `VISION_MODE=llm`
+   - `GOOGLE_API_KEY` = Gemini API key
+8. Render auto-builds on every push to `main`.
 
 ### Frontend on Vercel
 
-1. In Vercel, **New Project** from the same repo, root directory
-   `frontend`, framework Next.js.
-2. Set `NEXT_PUBLIC_API_URL` = your Cloud Run backend URL.
-3. Deploy.
+1. In Vercel, **New Project** from the same repo.
+2. Root directory: `frontend`, framework Next.js.
+3. `NEXT_PUBLIC_API_URL` = `https://nexus-backend-o959.onrender.com`
+   (the code also defaults to this URL, so it works even if unset).
+4. The frontend runs entirely client-side in the browser and calls the
+   backend with no credentials, so the backend's CORS policy
+   (`allow_origins=["*"]`) permits any origin.
 
 ## Build notes & learnings
 

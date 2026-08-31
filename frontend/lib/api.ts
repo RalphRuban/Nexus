@@ -22,7 +22,8 @@ import type {
 } from "@/types/nexus";
 
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://nexus-backend-o959.onrender.com";
 
 export interface IncidentFilters {
   severity?: string;

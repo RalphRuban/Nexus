@@ -1,0 +1,157 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="820" viewBox="0 0 1200 820" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#475569"/>
+    </marker>
+    <marker id="arrowAccent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#2563eb"/>
+    </marker>
+    <linearGradient id="gFront" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eff6ff"/><stop offset="1" stop-color="#dbeafe"/>
+    </linearGradient>
+    <linearGradient id="gBack" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f0fdf4"/><stop offset="1" stop-color="#dcfce7"/>
+    </linearGradient>
+    <linearGradient id="gExt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fefce8"/><stop offset="1" stop-color="#fef9c3"/>
+    </linearGradient>
+    <filter id="shadow" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="820" rx="14" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="600" y="42" text-anchor="middle" font-size="26" font-weight="700" fill="#0f172a">NEXUS — Crisis Decision Support System</text>
+  <text x="600" y="64" text-anchor="middle" font-size="14" fill="#64748b">Reference Architecture</text>
+
+  <!-- ============ Frontend ============ -->
+  <rect x="40" y="90" width="340" height="300" rx="12" fill="url(#gFront)" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="60" y="118" font-size="16" font-weight="700" fill="#1d4ed8">Frontend · Next.js 16 (Vercel)</text>
+  <text x="60" y="136" font-size="11" fill="#475569">https://nexus-nu-pied.vercel.app</text>
+
+  <rect x="60" y="152" width="300" height="40" rx="8" fill="#ffffff" stroke="#93c5fd"/>
+  <text x="210" y="177" text-anchor="middle" font-size="13" font-weight="600" fill="#1e293b">Command Center UI (App Router)</text>
+
+  <rect x="60" y="202" width="142" height="40" rx="8" fill="#ffffff" stroke="#93c5fd"/>
+  <text x="131" y="227" text-anchor="middle" font-size="12" fill="#1e293b">Leaflet Crisis Map</text>
+
+  <rect x="212" y="202" width="148" height="40" rx="8" fill="#ffffff" stroke="#93c5fd"/>
+  <text x="286" y="219" text-anchor="middle" font-size="11" fill="#1e293b">Panels / Traces /</text>
+  <text x="286" y="233" text-anchor="middle" font-size="11" fill="#1e293b">Scenario Builder / Vision</text>
+
+  <rect x="60" y="252" width="300" height="40" rx="8" fill="#ffffff" stroke="#93c5fd"/>
+  <text x="210" y="277" text-anchor="middle" font-size="12" fill="#1e293b">Typed API client · lib/api.ts (REST, 4s poll)</text>
+
+  <rect x="60" y="302" width="300" height="70" rx="8" fill="#eff6ff" stroke="#93c5fd"/>
+  <text x="210" y="322" text-anchor="middle" font-size="12" font-weight="600" fill="#1d4ed8">Routes</text>
+  <text x="210" y="340" text-anchor="middle" font-size="10.5" fill="#475569">/ /resources /analysis /activity</text>
+  <text x="210" y="357" text-anchor="middle" font-size="10.5" fill="#475569">/scenarios /vision /weather</text>
+
+  <!-- ============ Middle arrow: Frontend -> Backend ============ -->
+  <line x1="384" y1="240" x2="440" y2="240" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="404" y="228" text-anchor="middle" font-size="10" fill="#64748b">HTTPS</text>
+  <text x="404" y="256" text-anchor="middle" font-size="10" fill="#64748b">REST</text>
+
+  <!-- ============ Backend ============ -->
+  <rect x="440" y="90" width="400" height="520" rx="12" fill="url(#gBack)" stroke="#22c55e" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="460" y="118" font-size="16" font-weight="700" fill="#15803d">Backend · FastAPI (Render)</text>
+  <text x="460" y="136" font-size="11" fill="#475569">https://nexus-backend-o959.onrender.com</text>
+
+  <!-- API router -->
+  <rect x="460" y="150" width="360" height="44" rx="8" fill="#ffffff" stroke="#86efac"/>
+  <text x="640" y="171" text-anchor="middle" font-size="13" font-weight="600" fill="#1e293b">REST API Routers</text>
+  <text x="640" y="187" text-anchor="middle" font-size="10.5" fill="#475569">incidents · zones · resources · weather · wards · reports · activity</text>
+
+  <!-- Agent pipeline -->
+  <rect x="460" y="210" width="360" height="150" rx="8" fill="#ffffff" stroke="#86efac"/>
+  <text x="640" y="232" text-anchor="middle" font-size="13" font-weight="600" fill="#1e293b">Agent Pipeline (Google ADK workflows)</text>
+  <text x="640" y="250" text-anchor="middle" font-size="10.5" fill="#64748b">google.adk.runners.Runner · async event stream</text>
+
+  <!-- agent boxes -->
+  <rect x="474" y="262" width="76" height="34" rx="6" fill="#dcfce7" stroke="#22c55e"/>
+  <text x="512" y="277" text-anchor="middle" font-size="10" fill="#166534">research</text>
+  <rect x="556" y="262" width="76" height="34" rx="6" fill="#dcfce7" stroke="#22c55e"/>
+  <text x="594" y="277" text-anchor="middle" font-size="10" fill="#166534">risk</text>
+  <rect x="638" y="262" width="76" height="34" rx="6" fill="#dcfce7" stroke="#22c55e"/>
+  <text x="676" y="277" text-anchor="middle" font-size="10" fill="#166534">geospatial</text>
+  <rect x="720" y="262" width="86" height="34" rx="6" fill="#dcfce7" stroke="#22c55e"/>
+  <text x="763" y="277" text-anchor="middle" font-size="10" fill="#166534">resource</text>
+
+  <rect x="474" y="302" width="104" height="34" rx="6" fill="#dcfce7" stroke="#22c55e"/>
+  <text x="526" y="317" text-anchor="middle" font-size="10" fill="#166534">coordinator</text>
+  <rect x="584" y="302" width="104" height="34" rx="6" fill="#dcfce7" stroke="#22c55e"/>
+  <text x="636" y="317" text-anchor="middle" font-size="10" fill="#166534">decision</text>
+  <rect x="694" y="302" width="112" height="34" rx="6" fill="#dcfce7" stroke="#22c55e"/>
+  <text x="750" y="317" text-anchor="middle" font-size="10" fill="#166534">simulation</text>
+
+  <!-- Scenario engine -->
+  <rect x="460" y="376" width="360" height="56" rx="8" fill="#ffffff" stroke="#86efac"/>
+  <text x="640" y="398" text-anchor="middle" font-size="13" font-weight="600" fill="#1e293b">Scenario Engine · “What if?” presets</text>
+  <text x="640" y="416" text-anchor="middle" font-size="10.5" fill="#64748b">isolated store snapshot · mutations · before/after risk</text>
+
+  <!-- Vision -->
+  <rect x="460" y="444" width="360" height="56" rx="8" fill="#ffffff" stroke="#86efac"/>
+  <text x="640" y="466" text-anchor="middle" font-size="13" font-weight="600" fill="#1e293b">Vision Intake</text>
+  <text x="640" y="484" text-anchor="middle" font-size="10.5" fill="#64748b">image upload → Gemini extraction → new incident</text>
+
+  <!-- Data store -->
+  <rect x="460" y="512" width="360" height="56" rx="8" fill="#ffffff" stroke="#86efac"/>
+  <text x="640" y="534" text-anchor="middle" font-size="13" font-weight="600" fill="#1e293b">Data Store Layer</text>
+  <text x="640" y="552" text-anchor="middle" font-size="10.5" fill="#64748b">Firestore ⇄ in-memory (mock / lite_data fallback)</text>
+
+  <!-- ============ External ============ -->
+  <rect x="880" y="90" width="280" height="300" rx="12" fill="url(#gExt)" stroke="#eab308" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="900" y="118" font-size="16" font-weight="700" fill="#a16207">External · Google Cloud</text>
+
+  <rect x="900" y="135" width="240" height="70" rx="8" fill="#ffffff" stroke="#fde047"/>
+  <text x="1020" y="158" text-anchor="middle" font-size="12.5" font-weight="600" fill="#1e293b">Gemini (Gemini API)</text>
+  <text x="1020" y="176" text-anchor="middle" font-size="10.5" fill="#64748b">gemini-3.5-flash</text>
+  <text x="1020" y="192" text-anchor="middle" font-size="10.5" fill="#64748b">vision + LLM agent mode</text>
+
+  <rect x="900" y="220" width="240" height="70" rx="8" fill="#ffffff" stroke="#fde047"/>
+  <text x="1020" y="243" text-anchor="middle" font-size="12.5" font-weight="600" fill="#1e293b">Cloud Firestore</text>
+  <text x="1020" y="261" text-anchor="middle" font-size="10.5" fill="#64748b">projects/nexus-f351a</text>
+  <text x="1020" y="277" text-anchor="middle" font-size="10.5" fill="#64748b">~4,000 seeded docs · free tier</text>
+
+  <rect x="900" y="305" width="240" height="66" rx="8" fill="#ffffff" stroke="#fde047"/>
+  <text x="1020" y="328" text-anchor="middle" font-size="12.5" font-weight="600" fill="#1e293b">Firebase Admin SDK</text>
+  <text x="1020" y="346" text-anchor="middle" font-size="10.5" fill="#64748b">GOOGLE_APPLICATION_CREDENTIALS</text>
+  <text x="1020" y="362" text-anchor="middle" font-size="10.5" fill="#64748b">_JSON service account</text>
+
+  <!-- arrows to external -->
+  <line x1="820" y1="448" x2="896" y2="172" stroke="#eab308" stroke-width="2" marker-end="url(#arrowAccent)"/>
+  <text x="882" y="310" font-size="10" fill="#a16207">vision / LLM</text>
+
+  <line x1="820" y1="540" x2="896" y2="255" stroke="#eab308" stroke-width="2" marker-end="url(#arrowAccent)"/>
+  <text x="844" y="392" font-size="10" fill="#a16207">Firestore CRUD</text>
+
+  <!-- ============ Bottom: data flow legend ============ -->
+  <rect x="40" y="420" width="340" height="190" rx="12" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="60" y="444" font-size="14" font-weight="700" fill="#0f172a">Data flow</text>
+  <text x="60" y="468" font-size="11.5" fill="#334155">1 · UI polls REST API every 4s</text>
+  <text x="60" y="488" font-size="11.5" fill="#334155">2 · Analyze → 7-agent ADK pipeline</text>
+  <text x="60" y="508" font-size="11.5" fill="#334155">3 · Plan A/B/C + human approval</text>
+  <text x="60" y="528" font-size="11.5" fill="#334155">4 · Scenario isolates store, mutates,</text>
+  <text x="72" y="544" font-size="11.5" fill="#334155">  recomputes risk (Simulation agent)</text>
+  <text x="60" y="564" font-size="11.5" fill="#334155">5 · Vision image → Gemini → incident</text>
+  <text x="60" y="584" font-size="11.5" fill="#334155">6 · Real data feeds Research agent</text>
+
+  <!-- ============ Compliance / requirements ============ -->
+  <rect x="40" y="630" width="1120" height="120" rx="12" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="60" y="656" font-size="14" font-weight="700" fill="#0f172a">Track compliance</text>
+  <rect x="60" y="670" width="330" height="46" rx="8" fill="#f0fdf4" stroke="#86efac"/>
+  <text x="225" y="689" text-anchor="middle" font-size="11.5" font-weight="600" fill="#15803d">Gemini via Gemini API ✓</text>
+  <text x="225" y="705" text-anchor="middle" font-size="10.5" fill="#475569">gemini-3.5-flash</text>
+  <rect x="410" y="670" width="330" height="46" rx="8" fill="#eef2ff" stroke="#a5b4fc"/>
+  <text x="575" y="689" text-anchor="middle" font-size="11.5" font-weight="600" fill="#4338ca">Google Agent Framework ✓</text>
+  <text x="575" y="705" text-anchor="middle" font-size="10.5" fill="#475569">google.adk</text>
+  <rect x="760" y="670" width="370" height="46" rx="8" fill="#fefce8" stroke="#fde047"/>
+  <text x="945" y="689" text-anchor="middle" font-size="11.5" font-weight="600" fill="#a16207">GCP Infrastructure ✓</text>
+  <text x="945" y="705" text-anchor="middle" font-size="10.5" fill="#475569">Cloud Firestore (firebase-admin)</text>
+  <text x="60" y="736" font-size="11" fill="#94a3b8">Hosting: Vercel (frontend) + Render (backend) · Deterministic mode keeps the pipeline offline-capable; Gemini layer bolts on via AGENT_LLM_MODE=llm</text>
+
+  <!-- stack badges -->
+  <text x="60" y="778" font-size="11" fill="#94a3b8">Stack: Next.js 16 · FastAPI · google.adk · firebase-admin · Leaflet · Python 3.12</text>
+</svg>

@@ -91,7 +91,8 @@ flowchart LR
 │   │   ├── services/   Firestore / mock data layer
 │   │   └── vision/     Gemini image extraction
 │   ├── tests/          pytest suite
-│   ├── Procfile        Render start command (uvicorn)
+│   ├── Dockerfile      Render container (installs deps, starts uvicorn)
+│   ├── Procfile        Bare-metal uvicorn start command (Python runtime)
 │   └── seed_firestore.py
 └── frontend/           Next.js 16 command center
     ├── app/            Routes + layout
@@ -219,34 +220,49 @@ Attribution for the weather data is required under CC BY 4.0 wherever it is
 displayed. The data lives in `backend/app/data/real_data.py` and can be
 regenerated with `python scripts/fetch_real_data.py` (network required).
 
+## Submission package
+
+Judging materials for the hackathon submission live in `docs/`:
+
+- **Text description** — `docs/submission-description.md`
+- **Architecture diagram** — `docs/architecture.svg` (rendered PNG:
+  `docs/architecture.png`)
+
 ## Deployment
 
 This app runs live, front-to-back, without an account with a billing card:
-the FastAPI backend on **Render** (free web service, native Python runtime)
-and the Next.js frontend on **Vercel** (free Hobby plan). Firestore is used
-as the real persistent store.
+the FastAPI backend on **Render** (free web service) and the Next.js
+frontend on **Vercel** (free Hobby plan). Firestore is used as the real
+persistent store, with an automatic fallback to a lightweight in-memory
+dataset when the free-tier quota is exhausted.
 
 Live URLs:
 - Backend: `https://nexus-backend-o959.onrender.com`
 - Frontend: `https://nexus-nu-pied.vercel.app`
 
-### Backend on Render (native Python, no Docker)
+### Backend on Render (Docker runtime)
 
 1. Push the repo to GitHub (default branch `main`).
 2. In Render, **New + → Web Service**, connect the repo.
 3. Root directory: `backend`
-4. Runtime: **Python 3** (Render detects `requirements.txt` + `Procfile`;
-   there is **no Dockerfile** — that keeps deploys fast and free).
-5. Build command: `pip install -r requirements.txt`
-6. Start command (from `Procfile`): `uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}`
-7. Environment:
+4. Runtime: **Docker** (Render builds the committed `Dockerfile`, which
+   installs `requirements.txt` and starts uvicorn on `$PORT`).
+5. Environment:
    - `USE_FIRESTORE=true`
    - `GOOGLE_APPLICATION_CREDENTIALS_JSON` = full Firebase admin service-account
-     JSON (the app falls back to in-memory mock data if unset)
+     JSON (without credentials the app runs on the in-memory store; on quota
+     exhaustion it falls back to the compact `lite_data` seed)
    - `AGENT_LLM_MODE=deterministic` (or `llm` to use the Gemini agent)
    - `VISION_MODE=llm`
    - `GOOGLE_API_KEY` = Gemini API key
-8. Render auto-builds on every push to `main`.
+6. Render auto-builds on every push to `main`.
+
+> **Note on runtime choice.** The service was created with the Docker
+> runtime, which is what the committed `Dockerfile` drives. If you prefer a
+> plain Python deployment (no containers), recreate the web service with
+> Runtime **Python 3**, build `pip install -r requirements.txt`, and start
+> `uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}` — the app is
+> container-agnostic and both paths work identically.
 
 ### Frontend on Vercel
 
@@ -275,6 +291,12 @@ Live URLs:
 - **Mock-first persistence is a demo superpower.** The same store layer
   backs the in-memory mode and Cloud Firestore; switching is one env flag,
   and seeding persists ~4,000 real records for consistency across reviews.
+- **Degrade, don't crash.** The data layer applies server-side query
+  limits so reads stay inside the free-tier budget, and — when the
+  Firestore Spark quota is momentarily exhausted — it falls back to a
+  compact in-memory seed (`app.data.lite_data`) instead of failing. A
+  demo that keeps serving under an operational limit is worth more than
+  one that returns 500s mid-walkthrough.
 - **Disclosure:** NEXUS was built from scratch during the submission
   period. AI coding assistants were used to write and debug code; no
   pre-existing application code, frameworks beyond those listed under
@@ -285,6 +307,10 @@ Live URLs:
 
 - The mock store is in-memory and resets on restart; use the **Reset demo
   data** button in the header to reseed at any time.
+- When Firestore's free-tier read quota is exhausted for the day, the app
+  transparently serves a compact in-memory dataset (`lite_data`: 343 docs,
+  few MB) so the demo keeps working; it returns to real Firestore
+  persistence once quota is available again.
 - In Firestore mode (`USE_FIRESTORE=true`), seed once with
   `python seed_firestore.py` (pass the admin JSON via
   `GOOGLE_APPLICATION_CREDENTIALS` or `--credentials PATH`).

@@ -275,7 +275,7 @@ def weather(
     if date is not None:
         filters["date"] = date
 
-    events = list_documents("weather_events", filters)
+    events = list_documents("weather_events", filters, limit=limit)
 
     events = sorted(events, key=lambda item: item["timestamp"], reverse=True)
 
@@ -300,7 +300,7 @@ def wards(
     if zone is not None:
         filters["zone"] = zone
 
-    records = list_documents("wards", filters)
+    records = list_documents("wards", filters, limit=limit)
 
     if limit:
         records = records[:limit]

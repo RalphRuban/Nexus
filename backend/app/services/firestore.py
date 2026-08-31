@@ -231,6 +231,7 @@ def from_firestore_value(value):
 def list_documents(
     collection_name: str,
     filters: Optional[Dict[str, Any]] = None,
+    limit: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
     filters = filters or {}
 
@@ -253,12 +254,18 @@ def list_documents(
                 if item.get(key) == value
             ]
 
+        if limit is not None:
+            results = results[:limit]
+
         return results
 
     query = _get_collection(collection_name)
 
     for key, value in filters.items():
         query = query.where(key, "==", value)
+
+    if limit is not None:
+        query = query.limit(limit)
 
     documents = query.stream()
 

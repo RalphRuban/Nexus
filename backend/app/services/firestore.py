@@ -85,9 +85,28 @@ def get_firestore_client():
 
     if not firebase_admin._apps:
         cred_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+        cred_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON")
 
         if cred_path:
             cred = credentials.Certificate(cred_path)
+        elif cred_json:
+            import json
+            import tempfile
+
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                suffix=".json",
+                delete=False,
+                encoding="utf-8",
+            ) as tmp:
+                json.dump(json.loads(cred_json), tmp)
+                credential_file = tmp.name
+
+            cred = credentials.Certificate(credential_file)
+        else:
+            cred = None
+
+        if cred is not None:
             firebase_admin.initialize_app(cred)
         else:
             firebase_admin.initialize_app()

@@ -1,0 +1,23 @@
+# Secrets — never bake local env or credentials into the image
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Virtual environment
+.venv/
+venv/
+
+# Tests are not part of the runtime image
+tests/
+
+# Local logs / helpers
+*.log
+start.ps1
+dev-output.log

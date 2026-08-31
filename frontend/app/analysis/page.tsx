@@ -55,7 +55,15 @@ export default function AnalysisPage() {
           >
             <AgentAnalysisPanel
               incident={selectedIncident}
-              onNavigateToScenarios={() => router.push("/scenarios")}
+              onNavigateToScenarios={() =>
+                router.push(
+                  selectedIncident
+                    ? `/scenarios?incident=${encodeURIComponent(
+                        selectedIncident.id
+                      )}`
+                    : "/scenarios"
+                )
+              }
             />
           </motion.div>
 

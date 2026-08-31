@@ -48,6 +48,7 @@ export default function AgentAnalysisPanel({
   const [approving, setApproving] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [approvedPlanId, setApprovedPlanId] = useState<string | null>(null);
 
   const runAnalysis = async () => {
     if (!incident) return;
@@ -56,6 +57,7 @@ export default function AgentAnalysisPanel({
     setError(null);
     setRevealed(false);
     setSelectedPlanId(null);
+    setApprovedPlanId(null);
 
     try {
       const result = await api.analyzeIncident(incident.id);
@@ -84,6 +86,7 @@ export default function AgentAnalysisPanel({
 
     try {
       await api.approvePlan(incident.id, plan.id);
+      setApprovedPlanId(plan.id);
       toast("success", `Plan ${plan.id} (${plan.label}) approved.`);
     } catch (err) {
       console.error(err);
@@ -240,6 +243,7 @@ export default function AgentAnalysisPanel({
                   incidentId={incident?.id ?? null}
                   approving={approving === plan.id}
                   selected={selectedPlanId === plan.id}
+                  approved={approvedPlanId === plan.id}
                   onSelect={() => setSelectedPlanId(plan.id)}
                   onApprove={approvePlan}
                   onSimulate={onNavigateToScenarios}
@@ -355,6 +359,7 @@ function PlanCard({
   incidentId,
   approving,
   selected,
+  approved,
   onSelect,
   onApprove,
   onSimulate,
@@ -363,6 +368,7 @@ function PlanCard({
   incidentId: string | null;
   approving: boolean;
   selected: boolean;
+  approved: boolean;
   onSelect: () => void;
   onApprove: (plan: PlanOption) => void;
   onSimulate?: () => void;
@@ -380,7 +386,7 @@ function PlanCard({
       {selected && (
         <motion.span
           layoutId="nexus-plan-highlight"
-          className="absolute inset-0 rounded-lg border-2 border-purple-400"
+          className="pointer-events-none absolute inset-0 rounded-lg border-2 border-purple-400"
           transition={{ duration: 0.35, ease: "easeOut" }}
         />
       )}
@@ -400,6 +406,13 @@ function PlanCard({
           <span className="flex items-center gap-1 rounded bg-purple-500/20 px-2 py-0.5 text-[10px] font-semibold text-purple-300">
             <Sparkles className="h-3 w-3" />
             Best
+          </span>
+        )}
+
+        {approved && (
+          <span className="flex items-center gap-1 rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+            <ShieldCheck className="h-3 w-3" />
+            Approved
           </span>
         )}
       </div>
@@ -449,11 +462,13 @@ function PlanCard({
             e.stopPropagation();
             onApprove(plan);
           }}
-          disabled={!incidentId || approving}
+          disabled={!incidentId || approving || approved}
           className={`flex flex-1 items-center justify-center gap-1.5 rounded border px-2 py-1.5 text-[11px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${
-            selected
-              ? "border-emerald-400 bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30"
-              : "border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10"
+            approved
+              ? "border-emerald-500/60 bg-emerald-500/20 text-emerald-200"
+              : selected
+                ? "border-emerald-400 bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30"
+                : "border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10"
           }`}
         >
           {approving ? (
@@ -462,7 +477,7 @@ function PlanCard({
             <ShieldCheck className="h-3 w-3" />
           )}
 
-          Approve
+          {approved ? "Approved" : "Approve"}
         </button>
 
         {onSimulate && (

@@ -4,3 +4,7 @@ pydantic
 pydantic-settings
 firebase-admin
 python-dotenv
+python-multipart
+pytest
+httpx
+google-adk

@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 
+from app.data.real_data import REAL_WEATHER_EVENTS, WARDS
+
 INCIDENTS = [
     {
         "id": "INC-001",
@@ -411,6 +413,38 @@ SUPPLIES = [
 ]
 
 
+# Historic monsoon records (Open-Meteo Archive API, CC BY 4.0).
+WEATHER_EVENTS = list(REAL_WEATHER_EVENTS)
+
+
+INCIDENT_REPORTS = [
+    {
+        "id": "RPT-001",
+        "zone": "ZONE-N01",
+        "source": "Field Unit 4",
+        "summary": "Water rising rapidly on North River District residential streets.",
+        "severity": "HIGH",
+        "timestamp": "2026-08-15T18:32:00+00:00",
+    },
+    {
+        "id": "RPT-002",
+        "zone": "ZONE-N02",
+        "source": "Automated Sensor",
+        "summary": "Industrial Link reported impassable after drainage failure.",
+        "severity": "MEDIUM",
+        "timestamp": "2026-08-15T18:38:00+00:00",
+    },
+    {
+        "id": "RPT-003",
+        "zone": "ZONE-N03",
+        "source": "Citizen Report",
+        "summary": "Downed power lines reported near Northern Residential Zone.",
+        "severity": "MEDIUM",
+        "timestamp": "2026-08-15T18:40:00+00:00",
+    },
+]
+
+
 ACTIVITY = [
     {
         "id": "LOG-001",
@@ -441,3 +475,5 @@ ACTIVITY = [
         "severity": "INFO",
     },
 ]
+
+SCENARIOS = []

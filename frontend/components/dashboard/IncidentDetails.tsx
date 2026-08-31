@@ -1,6 +1,8 @@
 import {
   Activity,
   MapPin,
+  Pencil,
+  Trash2,
   Users,
   Waves,
 } from "lucide-react";
@@ -9,6 +11,9 @@ import { Incident } from "@/types/nexus";
 
 interface IncidentDetailsProps {
   incident: Incident | null;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  compact?: boolean;
 }
 
 function Stat({
@@ -39,6 +44,9 @@ function Stat({
 
 export default function IncidentDetails({
   incident,
+  onEdit,
+  onDelete,
+  compact = false,
 }: IncidentDetailsProps) {
   if (!incident) {
     return (
@@ -46,6 +54,56 @@ export default function IncidentDetails({
         <p className="text-sm text-slate-500">
           Select an incident to view operational details.
         </p>
+      </section>
+    );
+  }
+
+  if (compact) {
+    return (
+      <section className="flex h-full items-center gap-4 rounded-xl border border-slate-800 bg-slate-950/90 px-4 backdrop-blur">
+        <div className="min-w-0">
+          <p className="text-[9px] font-semibold tracking-widest text-blue-400">
+            SELECTED INCIDENT
+          </p>
+
+          <h2 className="mt-1 truncate text-sm font-semibold text-white">
+            {incident.title}
+          </h2>
+        </div>
+
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <span className="rounded-full bg-red-500/10 px-2 py-1 text-[9px] font-semibold text-red-300">
+            {incident.severity}
+          </span>
+
+          <span className="rounded-full bg-emerald-500/10 px-2 py-1 text-[9px] font-semibold text-emerald-300">
+            {incident.status}
+          </span>
+
+          {(onEdit || onDelete) && (
+            <div className="ml-2 flex items-center gap-1">
+              {onEdit && (
+                <button
+                  onClick={onEdit}
+                  className="flex items-center gap-1 rounded border border-slate-700 px-2 py-1 text-[10px] text-slate-300 transition hover:bg-slate-800"
+                >
+                  <Pencil className="h-3 w-3" />
+                  Edit
+                </button>
+              )}
+
+              {onDelete && (
+                <button
+                  onClick={onDelete}
+                  className="flex items-center gap-1 rounded border border-red-500/30 px-2 py-1 text-[10px] text-red-300 transition hover:bg-red-500/10"
+                >
+                  <Trash2 className="h-3 w-3" />
+                  Delete
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </section>
     );
   }
@@ -74,6 +132,30 @@ export default function IncidentDetails({
             {incident.status}
           </span>
         </div>
+
+        {(onEdit || onDelete) && (
+          <div className="mt-4 flex items-center gap-2">
+            {onEdit && (
+              <button
+                onClick={onEdit}
+                className="flex items-center gap-1.5 rounded border border-slate-700 px-3 py-1.5 text-[11px] text-slate-300 transition hover:bg-slate-800"
+              >
+                <Pencil className="h-3 w-3" />
+                Edit
+              </button>
+            )}
+
+            {onDelete && (
+              <button
+                onClick={onDelete}
+                className="flex items-center gap-1.5 rounded border border-red-500/30 px-3 py-1.5 text-[11px] text-red-300 transition hover:bg-red-500/10"
+              >
+                <Trash2 className="h-3 w-3" />
+                Delete
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="space-y-3 p-4">

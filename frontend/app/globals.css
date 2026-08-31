@@ -1,7 +1,44 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
 
 :root {
   color-scheme: dark;
+  /* Command-center palette (dark-first) */
+  --background: oklch(0.129 0.042 264.695); /* slate-950 */
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.168 0.042 264.695);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.168 0.042 264.695);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.623 0.214 259.815); /* electric blue */
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.279 0.041 260.031); /* slate-800 */
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.208 0.042 265.755); /* slate-900 */
+  --muted-foreground: oklch(0.708 0.038 256.788); /* slate-400 */
+  --accent: oklch(0.623 0.214 259.815 / 0.12);
+  --accent-foreground: oklch(0.789 0.154 211.53); /* cyan-400 */
+  --destructive: oklch(0.637 0.237 25.331); /* red-500 */
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.623 0.214 259.815);
+  --chart-1: oklch(0.623 0.214 259.815);
+  --chart-2: oklch(0.789 0.154 211.53);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.637 0.237 25.331);
+  --chart-5: oklch(0.696 0.17 162.48);
+  --radius: 0.5rem;
+  --sidebar: oklch(0.129 0.042 264.695);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.623 0.214 259.815);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.279 0.041 260.031);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.623 0.214 259.815);
 }
 
 html,
@@ -23,4 +60,174 @@ body {
   height: 100%;
   width: 100%;
   background: #0f172a;
+}
+
+/* ---------------------------------------------------------------------------
+   NEXUS animations (CSS/Tailwind only)
+--------------------------------------------------------------------------- */
+
+@keyframes nexus-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes nexus-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes nexus-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes nexus-glow {
+  0% {
+    filter: drop-shadow(0 0 0 rgba(59, 130, 246, 0));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.9));
+  }
+
+  100% {
+    filter: drop-shadow(0 0 0 rgba(59, 130, 246, 0));
+  }
+}
+
+.animate-slide-up {
+  animation: nexus-slide-up 0.3s ease-out both;
+}
+
+.animate-blink {
+  animation: nexus-blink 1.6s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: nexus-glow 1.6s ease-in-out infinite;
+}
+
+.nexus-grid-overlay {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 500;
+  background-image: linear-gradient(rgba(148, 163, 184, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.045) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.8) 0%, transparent 80%);
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(51, 65, 85, 0.4) 25%,
+    rgba(71, 85, 105, 0.6) 50%,
+    rgba(51, 65, 85, 0.4) 75%
+  );
+  background-size: 200% 100%;
+  animation: nexus-shimmer 1.4s linear infinite;
+}
+
+/* ---------------------------------------------------------------------------
+   Command-center visual language
+--------------------------------------------------------------------------- */
+
+@theme inline {
+  --font-heading: var(--font-geist-sans);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* Accent glow helpers (Unlumen-style micro-glow) */
+.glow-primary {
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--primary) 40%, transparent),
+    0 0 18px color-mix(in oklch, var(--primary) 35%, transparent);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--accent-foreground) 40%, transparent),
+    0 0 18px color-mix(in oklch, var(--accent-foreground) 35%, transparent);
+}
+
+.text-glow {
+  text-shadow: 0 0 12px color-mix(in oklch, var(--primary) 60%, transparent);
+}
+
+/* Road status transition — stroke/opacity morph when a road's status changes */
+.nexus-road {
+  transition: stroke 0.6s ease, stroke-dasharray 0.6s ease, stroke-width 0.6s ease,
+    stroke-opacity 0.6s ease;
+}
+
+.nexus-road-blocked {
+  stroke-dasharray: 8 6;
 }

@@ -1,198 +1,184 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Radio, ShieldAlert } from "lucide-react";
+import { useState } from "react";
 
-import IncidentSidebar from "@/components/dashboard/IncidentSidebar";
-import IncidentDetails from "@/components/dashboard/IncidentDetails";
-import ActivityTimeline from "@/components/dashboard/ActivityTimeline";
+import { AnimatePresence, motion } from "framer-motion";
+
+import { FlaskConical, X } from "lucide-react";
+
+import AiDecisionPanel from "@/components/dashboard/AiDecisionPanel";
+import IncidentDrawer from "@/components/dashboard/IncidentDrawer";
+import KpiStrip from "@/components/dashboard/KpiStrip";
+import ScenarioPanel from "@/components/dashboard/ScenarioPanel";
 import CrisisMap from "@/components/map/MapWrapper";
-
-import { api } from "@/lib/api";
-
-import {
-  ActivityLog,
-  Hospital,
-  Incident,
-  Road,
-  Shelter,
-  Zone,
-} from "@/types/nexus";
+import { useNexus } from "@/lib/nexus-context";
+import { cinematicReveal, durations, easings } from "@/components/ui/motion";
 
 export default function Home() {
-  const [incidents, setIncidents] = useState<Incident[]>([]);
-  const [zones, setZones] = useState<Zone[]>([]);
-  const [roads, setRoads] = useState<Road[]>([]);
-  const [shelters, setShelters] = useState<Shelter[]>([]);
-  const [hospitals, setHospitals] = useState<Hospital[]>([]);
-  const [activity, setActivity] = useState<ActivityLog[]>([]);
+  const [scenarioOpen, setScenarioOpen] = useState(false);
 
-  const [selectedIncident, setSelectedIncident] =
-    useState<Incident | null>(null);
+  const {
+    incidents,
+    zones,
+    roads,
+    shelters,
+    hospitals,
+    weather,
+    wards,
+    selectedIncident,
+    selectedAnalysis,
+    simulatedZoneIds,
+    simulatedRoadIds,
+    filters,
+    selectIncident,
+    setAnalysis,
+    handleFilterChange,
+  } = useNexus();
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const analysisForIncident =
+    selectedAnalysis?.incident_id === selectedIncident?.id
+      ? selectedAnalysis
+      : null;
 
-  useEffect(() => {
-    async function loadDashboard() {
-      try {
-        setLoading(true);
-
-        const [
-          incidentData,
-          zoneData,
-          roadData,
-          shelterData,
-          hospitalData,
-          activityData,
-        ] = await Promise.all([
-          api.getIncidents(),
-          api.getZones(),
-          api.getRoads(),
-          api.getShelters(),
-          api.getHospitals(),
-          api.getActivity(),
-        ]);
-
-        setIncidents(incidentData);
-        setZones(zoneData);
-        setRoads(roadData);
-        setShelters(shelterData);
-        setHospitals(hospitalData);
-        setActivity(activityData);
-
-        if (incidentData.length > 0) {
-          setSelectedIncident(incidentData[0]);
-        }
-      } catch (err) {
-        console.error(err);
-
-        setError(
-          "Unable to connect to the NEXUS backend."
-        );
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadDashboard();
-  }, []);
-
-  if (loading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950">
-        <div className="text-center">
-          <ShieldAlert className="mx-auto h-8 w-8 animate-pulse text-blue-400" />
-
-          <p className="mt-4 text-sm text-slate-400">
-            Initializing NEXUS Command Center...
-          </p>
-        </div>
-      </main>
-    );
-  }
-
-  if (error) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950">
-        <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-8 text-center">
-          <ShieldAlert className="mx-auto h-8 w-8 text-red-400" />
-
-          <h1 className="mt-4 text-lg font-semibold text-white">
-            Backend unavailable
-          </h1>
-
-          <p className="mt-2 text-sm text-slate-500">
-            {error}
-          </p>
-
-          <p className="mt-4 font-mono text-xs text-slate-600">
-            Expected: http://localhost:8000
-          </p>
-        </div>
-      </main>
-    );
-  }
+  const handleSimulate = () => {
+    setScenarioOpen(true);
+  };
 
   return (
-    <main className="flex h-screen flex-col overflow-hidden bg-slate-950 text-white">
-      {/* Header */}
-
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-800 px-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-blue-500/30 bg-blue-500/10">
-            <ShieldAlert className="h-5 w-5 text-blue-400" />
-          </div>
-
-          <div>
-            <h1 className="text-sm font-bold tracking-[0.25em]">
-              NEXUS
-            </h1>
-
-            <p className="text-[10px] tracking-widest text-slate-600">
-              CRISIS COMMAND CENTER
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1.5">
-          <Radio className="h-3 w-3 text-emerald-400" />
-
-          <span className="text-[10px] font-semibold tracking-widest text-emerald-400">
-            SYSTEM ONLINE
-          </span>
-        </div>
-      </header>
-
-      {/* Main */}
-
-      <div className="flex min-h-0 flex-1">
-        <IncidentSidebar
+    <motion.div
+      variants={cinematicReveal}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      className="relative flex h-full flex-col"
+    >
+      {/* KPI strip (off the map) */}
+      <div className="shrink-0 border-b border-slate-800/80 px-4 py-3">
+        <KpiStrip
           incidents={incidents}
-          selectedIncident={selectedIncident}
-          onSelect={setSelectedIncident}
+          weather={weather}
+          wards={wards}
+          maxRiskScore={analysisForIncident?.risk.score ?? null}
+          affectedPopulation={selectedIncident?.affected_population ?? 0}
         />
+      </div>
 
-        <section className="flex min-w-0 flex-1 flex-col">
-          <div className="relative min-h-0 flex-1">
-            <CrisisMap
-              zones={zones}
-              roads={roads}
-              shelters={shelters}
-              hospitals={hospitals}
-            />
+      {/* Hero row: map + AI decision panel */}
+      <div className="flex min-h-0 flex-1">
+        <div className="relative min-w-0 flex-1">
+          <CrisisMap
+            incidents={incidents}
+            zones={zones}
+            roads={roads}
+            shelters={shelters}
+            hospitals={hospitals}
+            weather={weather}
+            wards={wards}
+            selectedIncidentId={selectedIncident?.id ?? null}
+            highlightZoneIds={simulatedZoneIds}
+            highlightRoadIds={simulatedRoadIds}
+            onSelectIncident={selectIncident}
+          />
 
-            <div className="absolute left-4 top-4 z-[1000] rounded-lg border border-slate-700 bg-slate-950/90 px-4 py-3 shadow-xl backdrop-blur">
-              <p className="text-[10px] font-semibold tracking-widest text-slate-500">
-                OPERATIONAL MAP
-              </p>
+          <div className="nexus-grid-overlay" />
 
-              <div className="mt-2 flex gap-4 text-[10px]">
-                <span className="flex items-center gap-1.5 text-red-300">
-                  <span className="h-2 w-2 rounded-full bg-red-500" />
-                  HIGH RISK
-                </span>
+          {/* Legend */}
+          <div className="absolute bottom-4 right-4 z-[1000] flex items-center gap-4 rounded-lg border border-slate-800 bg-slate-950/90 px-4 py-2.5 shadow-xl backdrop-blur">
+            <p className="text-[9px] font-semibold tracking-widest text-slate-500">
+              RAINFALL WARNING
+            </p>
 
-                <span className="flex items-center gap-1.5 text-yellow-300">
-                  <span className="h-2 w-2 rounded-full bg-yellow-500" />
-                  MEDIUM
-                </span>
+            <div className="flex gap-3 text-[9px]">
+              <span className="flex items-center gap-1.5 text-red-300">
+                <span className="h-2 w-2 rounded-full bg-red-600" />
+                EXTREME
+              </span>
 
-                <span className="flex items-center gap-1.5 text-blue-300">
-                  <span className="h-2 w-2 rounded-full bg-blue-400" />
-                  OPEN ROAD
-                </span>
-              </div>
+              <span className="flex items-center gap-1.5 text-orange-300">
+                <span className="h-2 w-2 rounded-full bg-orange-500" />
+                SEVERE
+              </span>
+
+              <span className="flex items-center gap-1.5 text-yellow-300">
+                <span className="h-2 w-2 rounded-full bg-yellow-500" />
+                WATCH
+              </span>
             </div>
           </div>
 
-          <ActivityTimeline activity={activity} />
-        </section>
+          <IncidentDrawer
+            incidents={incidents}
+            filters={filters}
+            selectedIncident={selectedIncident}
+            onFiltersChange={handleFilterChange}
+            onSelect={(incident) => selectIncident(incident.id)}
+          />
+        </div>
 
-        <IncidentDetails
-          incident={selectedIncident}
-        />
+        {/* Right AI decision panel */}
+        <aside className="flex h-full w-[320px] shrink-0 flex-col border-l border-slate-800/80 bg-slate-950/60">
+          <motion.div
+            key={selectedIncident?.id ?? "none"}
+            initial={{ opacity: 0, x: 16 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="min-h-0 flex-1 overflow-y-auto"
+          >
+            <AiDecisionPanel
+              incident={selectedIncident}
+              analysis={analysisForIncident}
+              onAnalysisChange={setAnalysis}
+              onSimulate={handleSimulate}
+            />
+          </motion.div>
+        </aside>
       </div>
-    </main>
+
+      {/* Sliding scenario engine panel */}
+      <AnimatePresence>
+        {scenarioOpen && selectedIncident && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              onClick={() => setScenarioOpen(false)}
+              className="absolute inset-0 z-[1500] bg-black/40 backdrop-blur-sm"
+            />
+
+            <motion.aside
+              initial={{ x: 420, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: 420, opacity: 0 }}
+              transition={{ duration: durations.cinematic, ease: easings.cinematic }}
+              className="absolute bottom-0 right-0 top-0 z-[1501] flex w-[420px] flex-col border-l border-slate-800 bg-slate-950/95 shadow-2xl backdrop-blur"
+            >
+              <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <FlaskConical className="h-4 w-4 text-purple-400" />
+
+                  <span className="text-[10px] font-semibold tracking-widest text-purple-300">
+                    SCENARIO ENGINE
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => setScenarioOpen(false)}
+                  className="rounded p-1 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+                  aria-label="Close scenario engine"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                <ScenarioPanel incident={selectedIncident} zones={zones} />
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }

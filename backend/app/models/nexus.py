@@ -23,6 +23,28 @@ class Incident(BaseModel):
     updated_at: datetime
 
 
+class IncidentCreate(BaseModel):
+    title: str
+    type: str
+    severity: Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+    status: Literal["ACTIVE", "MONITORING", "RESOLVED"] = "ACTIVE"
+    description: str = ""
+    location: Location
+    affected_zones: list[str] = []
+    affected_population: int = 0
+
+
+class IncidentUpdate(BaseModel):
+    title: str | None = None
+    type: str | None = None
+    severity: Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"] | None = None
+    status: Literal["ACTIVE", "MONITORING", "RESOLVED"] | None = None
+    description: str | None = None
+    location: Location | None = None
+    affected_zones: list[str] | None = None
+    affected_population: int | None = None
+
+
 class Zone(BaseModel):
     id: str
     name: str

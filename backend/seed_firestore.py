@@ -1,42 +1,16 @@
+import argparse
+import os
 import sys
 
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-from app.data.mock_data import (
-    ACTIVITY,
-    HOSPITALS,
-    INCIDENTS,
-    ROADS,
-    SHELTERS,
-    SUPPLIES,
-    TEAMS,
-    VEHICLES,
-    ZONES,
-)
+from app.services.firestore import MOCK_COLLECTIONS
 
 
-COLLECTIONS = {
-    "incidents": INCIDENTS,
-    "zones": ZONES,
-    "roads": ROADS,
-    "shelters": SHELTERS,
-    "hospitals": HOSPITALS,
-    "teams": TEAMS,
-    "vehicles": VEHICLES,
-    "supplies": SUPPLIES,
-    "activity": ACTIVITY,
-}
-
-
-def initialize_firebase():
+def initialize_firebase(credentials_path: str):
     if firebase_admin._apps:
         return
-
-    credentials_path = (
-        r"C:\Users\Ralph\Desktop\nexus"
-        r"\credentials\nexus-f351a-firebase-adminsdk-fbsvc-ec82f4ca9b.json"
-    )
 
     cred = credentials.Certificate(credentials_path)
 
@@ -73,16 +47,16 @@ def to_firestore_value(value):
     return value
 
 
-def seed_firestore():
+def seed_firestore(credentials_path: str):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-    initialize_firebase()
+    initialize_firebase(credentials_path)
 
     db = firestore.client()
 
     total = 0
 
-    for collection_name, documents in COLLECTIONS.items():
+    for collection_name, documents in MOCK_COLLECTIONS.items():
 
         print(
             f"\nSeeding collection: {collection_name}"
@@ -121,4 +95,24 @@ def seed_firestore():
 
 
 if __name__ == "__main__":
-    seed_firestore()
+    parser = argparse.ArgumentParser(
+        prog="seed_firestore",
+        description="Seed NEXUS Firestore with the mock dataset.",
+    )
+    parser.add_argument(
+        "--credentials",
+        default=os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
+        help="Path to the Firebase admin service-account JSON. "
+        "Defaults to the GOOGLE_APPLICATION_CREDENTIALS env var.",
+    )
+    args = parser.parse_args()
+
+    if not args.credentials:
+        print(
+            "No credentials provided. "
+            "Set GOOGLE_APPLICATION_CREDENTIALS or pass --credentials.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    seed_firestore(args.credentials)

@@ -11,6 +11,12 @@ FRONTEND_URL = os.getenv(
     "http://localhost:3000",
 )
 
+ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("ALLOWED_ORIGINS", "").split(",")
+    if origin.strip()
+]
+
 USE_FIRESTORE = (
     os.getenv("USE_FIRESTORE", "false").lower()
     in {"true", "1", "yes"}

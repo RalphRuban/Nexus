@@ -7,7 +7,7 @@ from app.api.routes import router
 from app.api.scenarios import router as scenarios_router
 from app.api.vision import router as vision_router
 from app.api.plans import router as plans_router
-from app.config import APP_NAME, FRONTEND_URL
+from app.config import ALLOWED_ORIGINS, APP_NAME, FRONTEND_URL
 
 
 app = FastAPI(
@@ -51,7 +51,12 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         FRONTEND_URL,
+        *ALLOWED_ORIGINS,
     ],
+    allow_origin_regex=(
+        r"https://.*\.vercel\.app$|https://.*\.onrender\.com$|"
+        r"http://localhost:.*$"
+    ),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -1,42 +1,92 @@
 import contextvars
+import logging
 import os
 from typing import Any, Dict, List, Optional
 
 from app.config import USE_FIRESTORE
 
+logger = logging.getLogger("nexus.firestore")
+
+# When a Firestore request fails at runtime -- e.g. the Spark free tier
+# exhausts its daily read quota and returns 429 -- we degrade to the
+# in-memory mock store so the demo keeps serving. On memory-limited hosts
+# (Render's ~512 MB free plan) loading the full seed can OOM, so we switch
+# to a compact dataset (app.data.lite_data) kept small on purpose.
+_USE_LITE = False
+_FIRESTORE_FAILED = False
+
+
+def _mark_firestore_failed():
+    global _USE_LITE, _FIRESTORE_FAILED
+    _FIRESTORE_FAILED = True
+    _USE_LITE = True
+    logger.warning(
+        "Firestore unavailable (likely quota exceeded); "
+        "falling back to lightweight in-memory store for this process."
+    )
+
+
+def _firestore_available() -> bool:
+    """True when Firestore is enabled and has not hit a runtime failure."""
+    return USE_FIRESTORE and not _FIRESTORE_FAILED
+
+
 # ---------------------------------------------------------------------------
 # Lazy mock data
 #
-# The seed data (``app.data.mock_data -> app.data.real_data``) is a large
-# module whose import materializes ~3,660 weather records and 198 wards as
-# live Python objects (~200-400 MB RSS). It is only needed when running in
-# mock (non-Firestore) mode, so we defer the import until first access.
-# This keeps the process footprint small at startup on memory-limited hosts.
+# The full seed data (``app.data.mock_data -> app.data.real_data``) is a
+# large module whose import materializes ~3,660 weather records and 198
+# wards as live Python objects (~200-400 MB RSS). In normal mock mode we
+# only ever need it if USE_FIRESTORE is off. When Firestore fails at
+# runtime we instead use the compact ``app.data.lite_data`` so we never
+# blow the memory budget on a small host. Both are deferred until first
+# access to keep the process footprint small at startup.
 # ---------------------------------------------------------------------------
 
 _mock_data_cache = None
 
 
 def _load_mock_data() -> dict:
-    """Import the mock data module once and cache the raw collections."""
+    """Import the seed data module once and cache the raw collections.
+
+    Returns the lightweight collections after a Firestore failure; the
+    full collections otherwise.
+    """
     global _mock_data_cache
 
     if _mock_data_cache is None:
-        from app.data.mock_data import (  # heavy import - deferred
-            ACTIVITY,
-            HOSPITALS,
-            INCIDENTS,
-            INCIDENT_REPORTS,
-            ROADS,
-            SCENARIOS,
-            SHELTERS,
-            SUPPLIES,
-            TEAMS,
-            VEHICLES,
-            WARDS,
-            WEATHER_EVENTS,
-            ZONES,
-        )
+        if _USE_LITE:
+            from app.data.lite_data import (  # compact import - deferred
+                ACTIVITY,
+                HOSPITALS,
+                INCIDENTS,
+                INCIDENT_REPORTS,
+                ROADS,
+                SCENARIOS,
+                SHELTERS,
+                SUPPLIES,
+                TEAMS,
+                VEHICLES,
+                WARDS,
+                WEATHER_EVENTS,
+                ZONES,
+            )
+        else:
+            from app.data.mock_data import (  # heavy import - deferred
+                ACTIVITY,
+                HOSPITALS,
+                INCIDENTS,
+                INCIDENT_REPORTS,
+                ROADS,
+                SCENARIOS,
+                SHELTERS,
+                SUPPLIES,
+                TEAMS,
+                VEHICLES,
+                WARDS,
+                WEATHER_EVENTS,
+                ZONES,
+            )
 
         _mock_data_cache = {
             "incidents": INCIDENTS,
@@ -237,7 +287,7 @@ def list_documents(
 
     active_store = _store_override.get()
 
-    if active_store is not None or not USE_FIRESTORE:
+    if active_store is not None or not _firestore_available():
         store = active_store if active_store is not None else _mock_store()
 
         collection_store = store.get(
@@ -259,23 +309,27 @@ def list_documents(
 
         return results
 
-    query = _get_collection(collection_name)
+    try:
+        query = _get_collection(collection_name)
 
-    for key, value in filters.items():
-        query = query.where(key, "==", value)
+        for key, value in filters.items():
+            query = query.where(key, "==", value)
 
-    if limit is not None:
-        query = query.limit(limit)
+        if limit is not None:
+            query = query.limit(limit)
 
-    documents = query.stream()
+        documents = query.stream()
 
-    return [
-        {
-            "id": document.id,
-            **from_firestore_value(document.to_dict()),
-        }
-        for document in documents
-    ]
+        return [
+            {
+                "id": document.id,
+                **from_firestore_value(document.to_dict()),
+            }
+            for document in documents
+        ]
+    except Exception:
+        _mark_firestore_failed()
+        return list_documents(collection_name, filters, limit)
 
 
 def get_document(
@@ -285,7 +339,7 @@ def get_document(
 
     active_store = _store_override.get()
 
-    if active_store is not None or not USE_FIRESTORE:
+    if active_store is not None or not _firestore_available():
         store = active_store if active_store is not None else _mock_store()
 
         collection_store = store.get(
@@ -300,19 +354,23 @@ def get_document(
 
         return dict(item)
 
-    document = (
-        _get_collection(collection_name)
-        .document(document_id)
-        .get()
-    )
+    try:
+        document = (
+            _get_collection(collection_name)
+            .document(document_id)
+            .get()
+        )
 
-    if not document.exists:
-        return None
+        if not document.exists:
+            return None
 
-    return {
-        "id": document.id,
-        **from_firestore_value(document.to_dict()),
-    }
+        return {
+            "id": document.id,
+            **from_firestore_value(document.to_dict()),
+        }
+    except Exception:
+        _mark_firestore_failed()
+        return get_document(collection_name, document_id)
 
 
 # ---------------------------------------------------------------------------
@@ -327,7 +385,7 @@ def create_document(
 ) -> Dict[str, Any]:
     active_store = _store_override.get()
 
-    if active_store is not None or not USE_FIRESTORE:
+    if active_store is not None or not _firestore_available():
         store = active_store if active_store is not None else _mock_store()
 
         collection_store = store.setdefault(
@@ -345,17 +403,21 @@ def create_document(
             **dict(data),
         }
 
-    document_ref = (
-        _get_collection(collection_name)
-        .document(document_id)
-    )
+    try:
+        document_ref = (
+            _get_collection(collection_name)
+            .document(document_id)
+        )
 
-    document_ref.set(dict(data))
+        document_ref.set(dict(data))
 
-    return {
-        "id": document_id,
-        **dict(data),
-    }
+        return {
+            "id": document_id,
+            **dict(data),
+        }
+    except Exception:
+        _mark_firestore_failed()
+        return create_document(collection_name, document_id, data)
 
 
 def update_document(
@@ -365,7 +427,7 @@ def update_document(
 ) -> Optional[Dict[str, Any]]:
     active_store = _store_override.get()
 
-    if active_store is not None or not USE_FIRESTORE:
+    if active_store is not None or not _firestore_available():
         store = active_store if active_store is not None else _mock_store()
 
         collection_store = store.setdefault(
@@ -385,24 +447,28 @@ def update_document(
             **dict(existing),
         }
 
-    document_ref = (
-        _get_collection(collection_name)
-        .document(document_id)
-    )
+    try:
+        document_ref = (
+            _get_collection(collection_name)
+            .document(document_id)
+        )
 
-    snapshot = document_ref.get()
+        snapshot = document_ref.get()
 
-    if not snapshot.exists:
-        return None
+        if not snapshot.exists:
+            return None
 
-    document_ref.update(dict(data))
+        document_ref.update(dict(data))
 
-    updated = document_ref.get()
+        updated = document_ref.get()
 
-    return {
-        "id": document_id,
-        **from_firestore_value(updated.to_dict()),
-    }
+        return {
+            "id": document_id,
+            **from_firestore_value(updated.to_dict()),
+        }
+    except Exception:
+        _mark_firestore_failed()
+        return update_document(collection_name, document_id, data)
 
 
 def delete_document(
@@ -411,7 +477,7 @@ def delete_document(
 ) -> bool:
     active_store = _store_override.get()
 
-    if active_store is not None or not USE_FIRESTORE:
+    if active_store is not None or not _firestore_available():
         store = active_store if active_store is not None else _mock_store()
 
         collection_store = store.get(
@@ -426,19 +492,23 @@ def delete_document(
 
         return True
 
-    document_ref = (
-        _get_collection(collection_name)
-        .document(document_id)
-    )
+    try:
+        document_ref = (
+            _get_collection(collection_name)
+            .document(document_id)
+        )
 
-    snapshot = document_ref.get()
+        snapshot = document_ref.get()
 
-    if not snapshot.exists:
-        return False
+        if not snapshot.exists:
+            return False
 
-    document_ref.delete()
+        document_ref.delete()
 
-    return True
+        return True
+    except Exception:
+        _mark_firestore_failed()
+        return delete_document(collection_name, document_id)
 
 
 # ---------------------------------------------------------------------------
@@ -477,8 +547,8 @@ def clear_mock_store() -> None:
 
 def reset_store() -> int:
     """Rebuild the mock store from the seed collections and return the
-    number of documents loaded. Does nothing in Firestore mode."""
-    if USE_FIRESTORE:
+    number of documents loaded. Does nothing in active Firestore mode."""
+    if USE_FIRESTORE and not _FIRESTORE_FAILED:
         return 0
 
     clear_mock_store()

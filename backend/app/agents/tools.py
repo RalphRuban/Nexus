@@ -18,7 +18,11 @@ _RISK_LEVEL = [
 
 
 def _get_incident(incident_id: str) -> dict[str, Any]:
-    incidents = list_documents("incidents", {"id": incident_id})
+    incidents = [
+        item
+        for item in list_documents("incidents")
+        if item.get("id") == incident_id
+    ]
 
     if not incidents:
         raise LookupError(f"Incident {incident_id} not found")
